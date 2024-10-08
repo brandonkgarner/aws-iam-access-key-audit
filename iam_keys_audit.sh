@@ -2,7 +2,7 @@
 
 IGNORE_USERS_WITHOUT_KEYS=true
 DENOTE_OLD=true
-OLDER_THAN_DATE=$(date +"%Y")
+OLDER_THAN_DATE=$(date +"%Y")  # i.e. "2024"
 
 # Formatting
 SPACING='    '
