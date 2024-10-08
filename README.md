@@ -18,21 +18,11 @@ AWS profiles should already be configured on the machine.
 ### Examples
 - `./iam_keys_audit.sh -p dev,qa`
 
-    <pre>
-    <b><u>dev (012345678901)</u></b>
-        dev-user-1
-            AKIAXXXXXXXXXXXXXXXX: 2024-10-08
-        dev-user-2
-            AKIAXXXXXXXXXXXXXXXX: 2024-10-08
-
-    <b><u>qa (012345678902)</u></b>
-        qa-user-1
-            AKIAXXXXXXXXXXXXXXXX: <span style="color:red">None</span>
-    </pre>
+    ![key_audit_pretty.png](img/key_audit_pretty.png)
 
 - `./iam_keys_audit.sh -p dev,qa --raw-with-old`
 
-    <pre>
+    ```
     dev (012345678901)
         dev-user-1
             AKIAXXXXXXXXXXXXXXXX: 2024-10-08
@@ -41,11 +31,11 @@ AWS profiles should already be configured on the machine.
     qa (012345678902)
         qa-user-1
             AKIAXXXXXXXXXXXXXXXX: None *
-    </pre>
+    ```
 
 - `./iam_keys_audit.sh -p dev,qa --raw`
 
-    <pre>
+    ```
     dev (012345678901)
         dev-user-1
             AKIAXXXXXXXXXXXXXXXX: 2024-10-08
@@ -54,4 +44,4 @@ AWS profiles should already be configured on the machine.
     qa (012345678902)
         qa-user-1
             AKIAXXXXXXXXXXXXXXXX: None
-    </pre>
+    ```
