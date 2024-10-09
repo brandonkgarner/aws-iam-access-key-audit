@@ -23,15 +23,14 @@ OUR_AWS_PROFILES=("${DEFAULT_AWS_PROFILES[@]}")
 # Display help function
 usage() {
     echo "Usage: $0 [options]"
-    echo ""
+    echo
     echo "Options:"
     echo "  -p, --profiles   Comma-separated list of AWS profiles (default: predefined profiles: ${DEFAULT_AWS_PROFILES[*]})"
     echo "  -r, --region     AWS region (default: $DEFAULT_AWS_REGION)"
     echo "  --raw            Disable all formatting"
     echo "  --raw-with-old   Disable all formatting except signify old"
     echo "  -h, --help       Display this help message"
-    echo ""
-    exit 1
+    echo
 }
 
 # Parse arguments
@@ -45,8 +44,8 @@ while [[ "$#" -gt 0 ]]; do
         -r|--region) OUR_AWS_REGION="$2"; shift ;;
         --raw) PRETTY=false; DENOTE_OLD=false ;;
         --raw-with-old) PRETTY=false ;;
-        -h|--help) usage ;;
-        *) echo "Unknown parameter: $1"; usage ;;
+        -h|--help) usage; exit 0 ;;
+        *) echo "Unknown parameter: $1"; usage; exit 1 ;;
     esac
     shift
 done
