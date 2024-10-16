@@ -1,11 +1,15 @@
 #!/bin/zsh
 
 DENOTE_OLD=true
+DRY_RUN=false
 IGNORE_INACTIVE_KEYS=false
 IGNORE_USERS_WITHOUT_KEYS=true
 DISABLE_AGE_FLAGS=false
 DISABLE_STATUS_FLAGS=false
 OLDER_THAN_DATE=$(date +"%Y")  # i.e. "2024"
+
+# Makes changes to users
+WRITE_INACTIVE=false
 
 # Formatting
 PRETTY=false  # Default to raw mode
@@ -37,6 +41,8 @@ usage() {
     echo "  --disable-age-flags               Disable old key age flags"
     echo "  --disable-status-flags            Disable active/inactive key flags"
     echo "  --disable-all-flags               Disable both age and status flags"
+    echo "  --dry-run                         Show actions, but do not write changes"
+    echo "  --inactivate-unused               Inactivate keys if they are marked as old"
     echo "  -h, --help                        Display this help message"
     echo
 }
@@ -56,6 +62,8 @@ while [[ "$#" -gt 0 ]]; do
         --disable-age-flags) DISABLE_AGE_FLAGS=true ;;
         --disable-status-flags) DISABLE_STATUS_FLAGS=true ;;
         --disable-all-flags) DISABLE_AGE_FLAGS=true; DISABLE_STATUS_FLAGS=true ;;
+        --dry-run) DRY_RUN=true ;;
+        --inactivate-unused) WRITE_INACTIVE=true; IGNORE_INACTIVE_KEYS=true ;;
         -h|--help) usage; exit 0 ;;
         *) echo "Unknown parameter: $1"; usage; exit 1 ;;
     esac
@@ -85,6 +93,24 @@ get_last_used_date() {
 is_key_old() {
     [[ ${1%%-*} -lt "$OLDER_THAN_DATE" ]]
 }
+
+inactivate_key() {
+    local user=$1
+    local key=$2
+    local profile=$3
+
+    # Set key as inactive
+    if $DRY_RUN; then
+        echo "${SPACING}${SPACING}${SPACING}(DRY-RUN) $user:$key will be deactivated"
+    else
+        if aws iam update-access-key --user-name "$user" --access-key-id "$key" --status Inactive --profile "$profile" --region "$OUR_AWS_REGION"; then
+            echo "${SPACING}${SPACING}${SPACING}$user:$key -> Successfully deactivated"
+        else
+            echo "${SPACING}${SPACING}${SPACING}$user:$key -> Failed to deactivate" >&2
+        fi
+    fi
+}
+
 
 # Improved formatting output
 print_header() {
@@ -160,8 +186,21 @@ for PROF in "${OUR_AWS_PROFILES[@]}"; do
         # Get both access key ID and status
         KEYS_LIST=$(get_access_keys "$USER" "$PROF")
 
+        # If the user has keys or we are using --show-users-without-keys
         if [[ -n "$KEYS_LIST" ]] || [[ $IGNORE_USERS_WITHOUT_KEYS == false ]]; then
-            print_user "$USER"
+            # Check if there are any active keys for the user
+            has_active_keys=false
+            while IFS=$'\t' read -r KEY local_status; do
+                if [[ "$local_status" != "Inactive" ]] || [[ $IGNORE_INACTIVE_KEYS == false ]]; then
+                    has_active_keys=true
+                    break
+                fi
+            done <<< "$KEYS_LIST"
+
+            # Only print the user if they have active keys or if we are not ignoring inactive keys or we are using --show-users-without-keys
+            if [[ $has_active_keys == true ]] || [[ $IGNORE_INACTIVE_KEYS == false ]] || [[ $IGNORE_USERS_WITHOUT_KEYS == false ]]; then
+                print_user "$USER"
+            fi
         fi
 
         if [[ -z "$KEYS_LIST" ]]; then
@@ -181,6 +220,10 @@ for PROF in "${OUR_AWS_PROFILES[@]}"; do
             FORMATTED_DATE=${LAST_USED_DATE:-"Never Used"}
 
             print_key "$KEY" "$FORMATTED_DATE" "$local_status"
+
+            if $WRITE_INACTIVE && is_key_old "$FORMATTED_DATE"; then
+                inactivate_key "$USER" "$KEY" "$PROF"
+            fi
         done <<< "$KEYS_LIST"
     done
 

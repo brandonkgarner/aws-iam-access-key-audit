@@ -9,15 +9,17 @@ AWS profiles should already be configured on the machine.
 ## Usage
 
 ### Options
-    -p, --profiles                    Comma-separated list of AWS profiles (default: '${OUR_AWS_PROFILES[*]}')"
-    -r, --region                      AWS region (default: '$OUR_AWS_REGION')"
-    --pretty                          Enable pretty formatting"
-    --ignore-inactive                 Ignore inactive access keys"
-    --show-users-without-keys         Show users without access keys"
-    --disable-age-flags               Disable old key age flags"
-    --disable-status-flags            Disable active/inactive key flags"
-    --disable-all-flags               Disable both age and status flags"
-    -h, --help                        Display this help message"
+    echo "  -p, --profiles                    Comma-separated list of AWS profiles (default: '${OUR_AWS_PROFILES[*]}')"
+    echo "  -r, --region                      AWS region (default: '$OUR_AWS_REGION')"
+    echo "  --pretty                          Enable pretty formatting"
+    echo "  --ignore-inactive                 Ignore inactive access keys"
+    echo "  --show-users-without-keys         Show users without access keys"
+    echo "  --disable-age-flags               Disable old key age flags"
+    echo "  --disable-status-flags            Disable active/inactive key flags"
+    echo "  --disable-all-flags               Disable both age and status flags"
+    echo "  --dry-run                         Show actions, but do not write changes"
+    echo "  --inactivate-unused               Inactivate keys if they are marked as old"
+    echo "  -h, --help                        Display this help message"
 
 ### Examples
 - `./iam_keys_audit.sh -p dev,qa`
@@ -56,7 +58,9 @@ AWS profiles should already be configured on the machine.
         qa-user-1
             AKIAXXXXXXXXXXXXXXXX: None
     ```
-  
+
+---
+
 - `./iam_keys_audit.sh -p dev,qa --pretty`
 
   ![key_audit_pretty.png](img/key_audit_pretty.png)
@@ -64,3 +68,21 @@ AWS profiles should already be configured on the machine.
 - `./iam_keys_audit.sh -p dev,qa --pretty --ignore-inactive --disable-status-flags`
 
   ![key_audit_pretty_filtered.png](img/key_audit_pretty_filtered.png)
+
+---
+
+- `./iam_keys_audit.sh -p dev,qa ----inactivate-unused --dry-run`
+
+    ```
+    dev (012345678901)
+        dev-user-1
+            AKIAXXXXXXXXXXXXXXXX: 2024-10-08
+    qa (012345678902)
+        qa-user-1
+            AKIAXXXXXXXXXXXXXXXX: None
+                (DRY-RUN) qa-user-1:AKIAXXXXXXXXXXXXXXXX will be deactivated
+    ```
+  
+- `./iam_keys_audit.sh -p dev,qa ----inactivate-unused --pretty`
+
+   ![key_audit_pretty_inactivate.png](img/key_audit_pretty_inactivate.png) 
