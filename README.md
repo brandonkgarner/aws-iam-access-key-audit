@@ -85,4 +85,4 @@ AWS profiles should already be configured on the machine.
   
 - `./iam_keys_audit.sh -p dev,qa ----inactivate-unused --pretty`
 
-   ![key_audit_pretty_inactivate.png](img/key_audit_pretty_inactivate.png) 
+[//]: # (   ![key_audit_pretty_inactivate.png]&#40;img/key_audit_pretty_inactivate.png&#41; )
