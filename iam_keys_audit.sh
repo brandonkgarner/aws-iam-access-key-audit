@@ -70,20 +70,18 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-# Function to get all users in an account
+# Functions
 get_users() {
     local profile=$1
     aws iam list-users --profile "$profile" --region "$OUR_AWS_REGION" --no-cli-pager --query 'Users[*].UserName' --output text
 }
 
-# Function to get access keys for a user, including status
 get_access_keys() {
     local user=$1
     local profile=$2
     aws iam list-access-keys --user "$user" --profile "$profile" --region "$OUR_AWS_REGION" --no-cli-pager --query 'AccessKeyMetadata[*].[AccessKeyId,Status]' --output text
 }
 
-# Function to get the last used date of an access key
 get_last_used_date() {
     local key=$1
     local profile=$2
@@ -99,10 +97,10 @@ inactivate_key() {
     local key=$2
     local profile=$3
 
-    # Set key as inactive
     if $DRY_RUN; then
         echo "${SPACING}${SPACING}${SPACING}(DRY-RUN) $user:$key will be deactivated"
     else
+        # Set key as inactive and use return code to verify
         if aws iam update-access-key --user-name "$user" --access-key-id "$key" --status Inactive --profile "$profile" --region "$OUR_AWS_REGION"; then
             echo "${SPACING}${SPACING}${SPACING}$user:$key -> Successfully deactivated"
         else
@@ -111,8 +109,7 @@ inactivate_key() {
     fi
 }
 
-
-# Improved formatting output
+# Output
 print_header() {
     if $PRETTY; then
         echo "${BOLD}${UNDERLINE}$1${NC}"
@@ -168,7 +165,7 @@ print_key() {
     fi
 }
 
-# Main loop
+# Main
 for PROF in "${OUR_AWS_PROFILES[@]}"; do
     ACC_NUM=$(aws sts --profile "$PROF" get-caller-identity --query 'Account' --no-cli-pager --output text)
     print_header "$PROF ($ACC_NUM)"
