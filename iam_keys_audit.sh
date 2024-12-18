@@ -10,6 +10,7 @@ OLDER_THAN_DATE=$(date +"%Y")  # i.e. "2024"
 
 # Makes changes to users
 WRITE_INACTIVE=false
+DELETE_INACTIVE_KEYS=false
 
 # Formatting
 PRETTY=false  # Default to raw mode
@@ -41,9 +42,13 @@ usage() {
     echo "  --disable-age-flags               Disable old key age flags"
     echo "  --disable-status-flags            Disable active/inactive key flags"
     echo "  --disable-all-flags               Disable both age and status flags"
+    echo "  --delete-inactive-keys            Delete inactive access keys"
     echo "  --dry-run                         Show actions, but do not write changes"
     echo "  --inactivate-unused               Inactivate keys if they are marked as old"
     echo "  -h, --help                        Display this help message"
+    echo
+    echo "note: --delete-inactive-keys cannot be combined with --ignore-inactive or --inactivate-unused"
+    echo "      --delete-inactive-keys ignores active keys by default during print operation"
     echo
 }
 
@@ -62,6 +67,7 @@ while [[ "$#" -gt 0 ]]; do
         --disable-age-flags) DISABLE_AGE_FLAGS=true ;;
         --disable-status-flags) DISABLE_STATUS_FLAGS=true ;;
         --disable-all-flags) DISABLE_AGE_FLAGS=true; DISABLE_STATUS_FLAGS=true ;;
+        --delete-inactive-keys) DELETE_INACTIVE_KEYS=true ;;
         --dry-run) DRY_RUN=true ;;
         --inactivate-unused) WRITE_INACTIVE=true; IGNORE_INACTIVE_KEYS=true ;;
         -h|--help) usage; exit 0 ;;
@@ -70,7 +76,21 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-# Functions
+# Deletion pre-checks
+if $DELETE_INACTIVE_KEYS; then
+    if $IGNORE_INACTIVE_KEYS || $WRITE_INACTIVE; then
+        echo "Error: Dangerous Operation: --delete-inactive-keys cannot be combined with --ignore-inactive or --inactivate-unused"
+        exit 1
+    elif [[ $DRY_RUN == false ]]; then
+        echo -n "Are you sure you want to delete all inactive keys? (yes/no): "
+        read confirm
+        if [[ "$confirm" != "yes" ]]; then
+            echo "Deletion cancelled."
+            exit 0
+        fi
+    fi
+fi
+
 get_users() {
     local profile=$1
     aws iam list-users --profile "$profile" --region "$OUR_AWS_REGION" --no-cli-pager --query 'Users[*].UserName' --output text
@@ -109,7 +129,22 @@ inactivate_key() {
     fi
 }
 
-# Output
+delete_key() {
+    local user=$1
+    local key=$2
+    local profile=$3
+
+    if $DRY_RUN; then
+        echo "${SPACING}${SPACING}${SPACING}(DRY-RUN) $user:$key will be deleted"
+    else
+        if aws iam delete-access-key --user-name "$user" --access-key-id "$key" --profile "$profile" --region "$OUR_AWS_REGION"; then
+            echo "${SPACING}${SPACING}${SPACING}$user:$key -> Successfully deleted"
+        else
+            echo "${SPACING}${SPACING}${SPACING}$user:$key -> Failed to delete" >&2
+        fi
+    fi
+}
+
 print_header() {
     if $PRETTY; then
         echo "${BOLD}${UNDERLINE}$1${NC}"
@@ -194,8 +229,10 @@ for PROF in "${OUR_AWS_PROFILES[@]}"; do
                 fi
             done <<< "$KEYS_LIST"
 
-            # Only print the user if they have active keys or if we are not ignoring inactive keys or we are using --show-users-without-keys
-            if [[ $has_active_keys == true ]] || [[ $IGNORE_INACTIVE_KEYS == false ]] || [[ $IGNORE_USERS_WITHOUT_KEYS == false ]]; then
+            # Print the user if DELETE_INACTIVE_KEYS is enabled and they have inactive keys,
+            # or if DELETE_INACTIVE_KEYS is not enabled and they have active keys, or we are not ignoring inactive keys, or we are using --show-users-without-keys
+            if [[ ($DELETE_INACTIVE_KEYS && "$KEYS_LIST" == *"Inactive"*) ||
+                  ($DELETE_INACTIVE_KEYS == false && ($has_active_keys == true || $IGNORE_INACTIVE_KEYS == false || $IGNORE_USERS_WITHOUT_KEYS == false)) ]]; then
                 print_user "$USER"
             fi
         fi
@@ -212,6 +249,9 @@ for PROF in "${OUR_AWS_PROFILES[@]}"; do
             if $IGNORE_INACTIVE_KEYS && [[ "$local_status" == "Inactive" ]]; then
                 continue
             fi
+            if $DELETE_INACTIVE_KEYS && [[ "$local_status" != "Inactive" ]]; then
+                continue
+            fi
 
             LAST_USED_DATE=$(get_last_used_date "$KEY" "$PROF")
             FORMATTED_DATE=${LAST_USED_DATE:-"Never Used"}
@@ -220,6 +260,8 @@ for PROF in "${OUR_AWS_PROFILES[@]}"; do
 
             if $WRITE_INACTIVE && is_key_old "$FORMATTED_DATE"; then
                 inactivate_key "$USER" "$KEY" "$PROF"
+            elif $DELETE_INACTIVE_KEYS && [[ "$local_status" == "Inactive" ]]; then
+                delete_key "$USER" "$KEY" "$PROF"
             fi
         done <<< "$KEYS_LIST"
     done

@@ -9,17 +9,23 @@ AWS profiles should already be configured on the machine.
 ## Usage
 
 ### Options
-    echo "  -p, --profiles                    Comma-separated list of AWS profiles (default: 'default')"
-    echo "  -r, --region                      AWS region (default: 'us-east-1')"
-    echo "  --pretty                          Enable pretty formatting"
-    echo "  --ignore-inactive                 Ignore inactive access keys"
-    echo "  --show-users-without-keys         Show users without access keys"
-    echo "  --disable-age-flags               Disable old key age flags"
-    echo "  --disable-status-flags            Disable active/inactive key flags"
-    echo "  --disable-all-flags               Disable both age and status flags"
-    echo "  --dry-run                         Show actions, but do not write changes"
-    echo "  --inactivate-unused               Inactivate keys if they are marked as old"
-    echo "  -h, --help                        Display this help message"
+|                           |                                                            |
+|---------------------------|------------------------------------------------------------|
+| -p, --profiles            | Comma-separated list of AWS profiles (default: 'default')" |
+| -r, --region              | AWS region (default: 'us-east-1')"                         |
+| --pretty                  | Enable pretty formatting"                                  |
+| --ignore-inactive         | Ignore inactive access keys"                               |
+| --show-users-without-keys | Show users without access keys"                            |
+| --disable-age-flags       | Disable old key age flags"                                 |
+| --disable-status-flags    | Disable active/inactive key flags"                         |
+| --disable-all-flags       | Disable both age and status flags"                         |
+| --delete-inactive-keys    | Delete inactive access keys"                               |
+| --dry-run                 | Show actions, but do not write changes"                    |
+| --inactivate-unused       | Inactivate keys if they are marked as old"                 |
+| -h, --help                | Display this help message"                                 |
+
+note: --delete-inactive-keys cannot be combined with --ignore-inactive or --inactivate-unused
+      --delete-inactive-keys ignores active keys by default during print operation
 
 ### Examples
 - `./iam_keys_audit.sh -p dev,qa`
