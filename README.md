@@ -9,20 +9,20 @@ AWS profiles should already be configured on the machine.
 ## Usage
 
 ### Options
-|                           |                                                            |
-|---------------------------|------------------------------------------------------------|
-| -p, --profiles            | Comma-separated list of AWS profiles (default: 'default')" |
-| -r, --region              | AWS region (default: 'us-east-1')"                         |
-| --pretty                  | Enable pretty formatting"                                  |
-| --ignore-inactive         | Ignore inactive access keys"                               |
-| --show-users-without-keys | Show users without access keys"                            |
-| --disable-age-flags       | Disable old key age flags"                                 |
-| --disable-status-flags    | Disable active/inactive key flags"                         |
-| --disable-all-flags       | Disable both age and status flags"                         |
-| --delete-inactive-keys    | Delete inactive access keys"                               |
-| --dry-run                 | Show actions, but do not write changes"                    |
-| --inactivate-unused       | Inactivate keys if they are marked as old"                 |
-| -h, --help                | Display this help message"                                 |
+| Option                    | Effect                                                    |
+|---------------------------|-----------------------------------------------------------|
+| -p, --profiles            | Comma-separated list of AWS profiles (default: 'default') |
+| -r, --region              | AWS region (default: 'us-east-1')                         |
+| --pretty                  | Enable pretty formatting                                  |
+| --ignore-inactive         | Ignore inactive access keys                               |
+| --show-users-without-keys | Show users without access keys                            |
+| --disable-age-flags       | Disable old key age flags                                 |
+| --disable-status-flags    | Disable active/inactive key flags                         |
+| --disable-all-flags       | Disable both age and status flags                         |
+| --delete-inactive-keys    | Delete inactive access keys                               |
+| --dry-run                 | Show actions, but do not write changes                    |
+| --inactivate-unused       | Inactivate keys if they are marked as old                 |
+| -h, --help                | Display this help message                                 |
 
 note: --delete-inactive-keys cannot be combined with --ignore-inactive or --inactivate-unused
       --delete-inactive-keys ignores active keys by default during print operation
